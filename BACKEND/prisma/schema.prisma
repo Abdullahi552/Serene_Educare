@@ -4,14 +4,30 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // url = env("DATABASE_URL") <-- DELETE THIS LINE
+  // url is handled in prisma.config.ts
 }
+
 model School {
-  id        String   @id @default(uuid())
-  name      String
-  schoolCode String  @unique
-  users     User[]
-  createdAt DateTime @default(now())
+  id           String   @id @default(uuid())
+  name         String
+  schoolCode   String   @unique
+  logoUrl      String?
+  physicalAddress String?
+  mailingAddress  String?
+  mailingSameAsPhysical Boolean @default(false)
+  contact      Json?    // Stores { name, jobTitle, healthOfficePhone, emergencyEmail }
+  notifications Json?   // Stores { dailyReport, emergencySms, weeklyDigest }
+
+  users        User[]
+  students     Student[]
+  incidents    Incident[]
+  activities   Activity[]
+  events       TrainingEvent[]
+  reports      GeneratedReport[]
+  conversations AiConversation[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model User {
@@ -21,12 +37,17 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
-  role         String   
+  role         String   // school_admin, principal, school_nurse, counselor, teacher
   title        String?
+  avatarUrl    String?
   active       Boolean  @default(true)
   
   sessions     Session[]
-  
+  reportedIncidents Incident[] @relation("ReportedBy")
+  activities   Activity[]
+  courseProgress CourseProgress[]
+  conversations AiConversation[]
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -37,5 +58,172 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   refreshToken String   @unique
   expiresAt    DateTime
+  createdAt    DateTime @default(now())
+}
+
+model Student {
+  id           String   @id @default(uuid())
+  schoolId     String
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  admissionNo  String
+  name         String
+  className    String
+  guardianName String?
+  guardianEmail String?
+  guardianPhone String?
+  allergies    String?
+  
+  incidents    Incident[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([schoolId, admissionNo])
+}
+
+model Incident {
+  id           String   @id @default(uuid())
+  schoolId     String
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  reference    String   @unique
+  studentId    String
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  type         String   // injury, illness, safety, medication
+  summary      String?
+  location     String
+  occurredAt   DateTime
+  description  String?
+  firstAid     Json?    // Array of strings
+  notifyParent Boolean  @default(false)
+  status       String   @default("open") // open, treated, sent_home, administered, referred, closed
+  isDraft      Boolean  @default(false)
+  
+  reportedById String
+  reportedBy   User     @relation("ReportedBy", fields: [reportedById], references: [id])
+  
+  attachments  IncidentAttachment[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([schoolId, occurredAt])
+}
+
+model IncidentAttachment {
+  id           String   @id @default(uuid())
+  incidentId   String
+  incident     Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  name         String
+  url          String
+  sizeBytes    Int
+  createdAt    DateTime @default(now())
+}
+
+model Activity {
+  id           String   @id @default(uuid())
+  schoolId     String
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  title        String
+  category     String   // hygiene, nutrition, safety, event
+  date         DateTime // yyyy-mm-dd
+  status       String   @default("pending") // pending, completed
+  assigneeId   String?
+  assignee     User?    @relation(fields: [assigneeId], references: [id])
+  notes        String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([schoolId, category, date])
+}
+
+model Course {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  type         String   // video, module, presentation, guide, document
+  durationMinutes Int
+  mandatory    Boolean  @default(false)
+  contentUrl   String?
+  
+  progress     CourseProgress[]
+}
+
+model CourseProgress {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId     String
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  status       String   @default("not_started") // not_started, in_progress, completed
+  progressPercent Int   @default(0)
+  minutesSpent Int      @default(0)
+  completedAt  DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, courseId])
+}
+
+model TrainingEvent {
+  id           String   @id @default(uuid())
+  schoolId     String
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  title        String
+  startsAt     DateTime
+  location     String?
+}
+
+model GeneratedReport {
+  id           String   @id @default(uuid())
+  schoolId     String
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  type         String   // incident_summary, student_allergies, activity_log, hygiene_compliance
+  name         String
+  format       String   // pdf, csv
+  sizeBytes    Int
+  filePath     String
+  periodFrom   DateTime?
+  periodTo     DateTime?
+
+  createdAt    DateTime @default(now())
+}
+
+model AiConversation {
+  id           String   @id @default(uuid())
+  schoolId     String
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  
+  messages     AiMessage[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AiMessage {
+  id           String   @id @default(uuid())
+  conversationId String
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role         String   // user, assistant
+  content      String
+  attachments  Json?
+
+  createdAt    DateTime @default(now())
+}
+
+model OnboardingRequest {
+  id           String   @id @default(uuid())
+  schoolName   String
+  contactName  String
+  email        String
+  phone        String
+  studentCount Int
+  plan         String?
+  message      String?
+
   createdAt    DateTime @default(now())
 }
