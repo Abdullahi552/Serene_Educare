@@ -90,8 +90,8 @@ model Incident {
   student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   type         String   // injury, illness, safety, medication
   summary      String?
-  location     String
-  occurredAt   DateTime
+  location     String?
+  occurredAt   DateTime?
   description  String?
   firstAid     Json?    // Array of strings
   notifyParent Boolean  @default(false)
@@ -226,4 +226,9 @@ model OnboardingRequest {
   message      String?
 
   createdAt    DateTime @default(now())
+}
+model Counter {
+  id    String @id @default(uuid())
+  name  String @unique
+  value Int    @default(0)
 }

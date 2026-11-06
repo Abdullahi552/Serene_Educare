@@ -22,7 +22,20 @@ async function main() {
         }
     });
 
-    console.log('✅ Seed successful. Admin created.');
+    // Create a student
+    const student = await prisma.student.create({
+        data: {
+            schoolId: school.id,
+            admissionNo: '41325',
+            name: 'Femi Sanusi',
+            className: 'JSS 1',
+            guardianName: 'Mr. Sanusi',
+            guardianEmail: 'sanusi@example.com'
+        }
+    });
+
+    console.log('✅ Seed successful. Admin and Student created.');
+    console.log(`Student ID: ${student.id}`); 
 }
 
 main()
