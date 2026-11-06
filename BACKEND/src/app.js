@@ -10,6 +10,8 @@ import errorHandler from './middlewares/error.middleware.js';
 import authRoutes from './routes/auth.routes.js';
 import studentRoutes from './routes/student.routes.js';
 import incidentRoutes from './routes/incident.routes.js';
+import dashboardRoutes from './routes/dashboard.routes.js';
+import activityRoutes from './routes/activity.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -27,6 +29,8 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/incidents', incidentRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/activities', activityRoutes);
 
 // 404 Handler
 app.use((req, res) => {
