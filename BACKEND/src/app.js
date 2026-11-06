@@ -12,6 +12,8 @@ import studentRoutes from './routes/student.routes.js';
 import incidentRoutes from './routes/incident.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 import activityRoutes from './routes/activity.routes.js';
+import schoolRoutes from './routes/school.routes.js';
+import trainingRoutes from './routes/training.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -31,6 +33,8 @@ app.use('/api/students', studentRoutes);
 app.use('/api/incidents', incidentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/activities', activityRoutes);
+app.use('/api/school', schoolRoutes);
+app.use('/api/training', trainingRoutes);
 
 // 404 Handler
 app.use((req, res) => {
