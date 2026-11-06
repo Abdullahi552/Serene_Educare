@@ -15,7 +15,7 @@ import activityRoutes from './routes/activity.routes.js';
 import schoolRoutes from './routes/school.routes.js';
 import trainingRoutes from './routes/training.routes.js';
 import reportRoutes from './routes/report.routes.js';
-
+import aiRoutes from './routes/ai.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -38,6 +38,7 @@ app.use('/api/activities', activityRoutes);
 app.use('/api/school', schoolRoutes);
 app.use('/api/training', trainingRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/ai', aiRoutes);
 
 
 // 404 Handler
